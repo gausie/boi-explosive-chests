@@ -1,7 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-  <name>Explosive Chests</name>
-  <directory>explosivechests</directory>
-  <description/>
-  <version>1.0</version>
-  <visibility />
+    <name>Parcel Bombs</name>
+    <directory>parcelbombs</directory>
+    <id>0</id>
+    <description>
+      Adds an item to the shop pool that makes chests explode when hit!
+      Can be used offensively and defensively, and works with a number of bomb synergies.
+    </description>
+    <version>1.0</version>
+    <visibility>Public</visibility>
+    <tag id="Items"/>
 </metadata>
