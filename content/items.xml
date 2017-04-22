@@ -3,6 +3,6 @@
     id="1"
     name="Parcel bomb"
     description="Chests rigged to explode if tampered with!"
-    gfx="collectibles_explodingchest.png"
+    gfx="collectibles_parcelbomb.png"
   />
 </items>
