@@ -1,10 +1,8 @@
-local EC  = RegisterMod('Exposive Chests', 1)
+local EC = RegisterMod('Exposive Chests', 1)
 local EXPLOSIVE_CHESTS = Isaac.GetItemIdByName('Explosive Chests')
 
 function is_a_chest(entity)
   if entity.Type ~= EntityType.ENTITY_PICKUP then return false end
-
-  Isaac.RenderText(entity.Variant, 40, 40, 0, 255, 0, 255)
 
   if (
     entity.Variant ~= PickupVariant.PICKUP_CHEST and
