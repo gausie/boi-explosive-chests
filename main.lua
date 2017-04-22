@@ -17,6 +17,33 @@ function is_a_chest(entity)
   return true
 end
 
+function spawn_mini_chest(parent)
+  local random_position = parent.Position:__add(
+    Vector(25,0):Rotated(math.random(360))
+  )
+
+  local bomb = Isaac.Spawn(
+    EntityType.ENTITY_BOMBDROP,
+    BombVariant.BOMB_NORMAL,
+    BombSubType.BOMB_NORMAL,
+    random_position,
+    Vector (0, 0),
+    parent
+  ):ToBomb()
+
+  bomb.ExplosionDamage = 0.5
+  bomb.RadiusMultiplier = 0.5
+  bomb.Flags = bomb.Flags + TearFlags.TEAR_GLITTER_BOMB
+
+  bomb.SpriteScale = Vector(0.5, 0.5)
+
+  local parent_sprite = parent:GetSprite()
+  local bomb_sprite = bomb:GetSprite()
+
+  bomb_sprite:Load(parent_sprite:GetFilename(), true)
+  bomb_sprite:Play(parent_sprite:GetDefaultAnimationName())
+end
+
 function EC:explodeChests()
   local player = Isaac.GetPlayer(0);
   local entities = Isaac.GetRoomEntities();
@@ -40,11 +67,19 @@ function EC:explodeChests()
             chest:TryOpenChest()
 
             -- Explode!
+            local bombflags = player:GetBombFlags()
             Game():BombExplosionEffects(
-              chest.Position, 10, player:GetBombFlags(), player.TearColor,
+              chest.Position, 10, bombflags, player.TearColor,
               chest, 1, false, false
             )
             chest:Remove()
+
+            -- Scatter bomb synergy
+            if (bombflags &  TearFlags.TEAR_SCATTER_BOMB ~= 0) then
+              spawn_mini_chest(chest)
+              spawn_mini_chest(chest)
+              spawn_mini_chest(chest)
+            end
 
             return
           end
