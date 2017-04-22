@@ -43,7 +43,7 @@ function EC:explodeChests()
 
             -- Explode!
             Game():BombExplosionEffects(
-              chest.Position, 10, player.TearFlags, player.TearColor,
+              chest.Position, 10, player:GetBombFlags(), player.TearColor,
               chest, 1, false, false
             )
             chest:Remove()
