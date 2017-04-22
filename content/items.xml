@@ -1,8 +1,8 @@
 <items gfxroot="gfx/" version="1">
   <passive
     id="1"
-    name="Explosive Chests"
-    description="Chests are explosive"
+    name="Parcel bomb"
+    description="Chests rigged to explode if tampered with!"
     gfx="collectibles_explodingchest.png"
   />
 </items>

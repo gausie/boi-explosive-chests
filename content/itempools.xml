@@ -1,9 +1,10 @@
 <ItemPools>
-  <Pool name="shop">
-    <Item name="Explosive Chests"
-      weight="1"
-      removeon="0.1"
-      decreaseby="1"
+  <Pool Name="shop">
+    <Item
+      Name="Parcel bomb"
+      Weight="100"
+      Decreaseby="1"
+      Removeon="0.1"
     />
 	</Pool>
 </ItemPools>
