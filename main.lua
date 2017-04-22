@@ -1,7 +1,24 @@
-local EC = RegisterMod('Exposive Chests', 1)
-local EXPLOSIVE_CHESTS = Isaac.GetItemIdByName('Explosive Chests')
+local EC = RegisterMod('Parcel bomb', 1)
+local PARCEL_BOMB = Isaac.GetItemIdByName('Parcel bomb')
 
-function is_a_chest(entity)
+log_text = ''
+
+function log()
+  Isaac.RenderText(log_text, 40, 40, 0, 255, 0, 255)
+end
+
+function isColinear(Vector1, Vector2, angle)
+  local dotProd = Vector1:Normalized():Dot(Vector2:Normalized())
+
+  log_text = dotProd
+
+  return (
+    dotProd <= 1 + angle and
+    dotProd >= 1 - angle
+  )
+end
+
+function isChest(entity)
   if entity.Type ~= EntityType.ENTITY_PICKUP then return false end
 
   if (
@@ -14,10 +31,14 @@ function is_a_chest(entity)
     entity.Variant ~= PickupVariant.PICKUP_REDCHEST
   ) then return false end
 
+  if entity.SubType ~= ChestSubType.CHEST_CLOSED then return false end
+
   return true
 end
 
-function spawn_mini_chest(parent)
+function spawnExplodingMiniChest(parent)
+  -- Make a bomb and skin them like the parent entity.
+  -- We should consider doing this the other way round
   local random_position = parent.Position:__add(
     Vector(25,0):Rotated(math.random(360))
   )
@@ -31,57 +52,110 @@ function spawn_mini_chest(parent)
     parent
   ):ToBomb()
 
+  -- Little bomb!
   bomb.ExplosionDamage = 0.5
   bomb.RadiusMultiplier = 0.5
-  bomb.Flags = bomb.Flags + TearFlags.TEAR_GLITTER_BOMB
-
   bomb.SpriteScale = Vector(0.5, 0.5)
 
+  -- Take advantage of Glitter Bomb mechanics to make them like little chests
+  bomb.Flags = bomb.Flags + TearFlags.TEAR_GLITTER_BOMB
+
+  -- Swap out the sprites
   local parent_sprite = parent:GetSprite()
   local bomb_sprite = bomb:GetSprite()
-
+  bomb_sprite:Stop()
   bomb_sprite:Load(parent_sprite:GetFilename(), true)
   bomb_sprite:Play(parent_sprite:GetDefaultAnimationName())
 end
 
-function EC:explodeChests()
+function EC:explodeChest(chest)
+  local player = Isaac.GetPlayer(0);
+
+  -- Open the chest
+  chest:TryOpenChest()
+
+  -- Explode!
+  local bombflags = player:GetBombFlags()
+  Game():BombExplosionEffects(
+    chest.Position, 10, bombflags, player.TearColor,
+    chest, 1, false, false
+  )
+  chest:Remove()
+
+  -- Scatter bomb synergy
+  if (bombflags &  TearFlags.TEAR_SCATTER_BOMB ~= 0) then
+    spawnExplodingMiniChest(chest)
+    spawnExplodingMiniChest(chest)
+    spawnExplodingMiniChest(chest)
+  end
+end
+
+function EC:postUpdate()
   local player = Isaac.GetPlayer(0);
   local entities = Isaac.GetRoomEntities();
 
-  if (player:HasCollectible(EXPLOSIVE_CHESTS) ~= true) then return end
+  log()
+
+  if (player:HasCollectible(PARCEL_BOMB) ~= true) then return end
 
   for _, entity in pairs(entities) do
-    if (entity.Type == EntityType.ENTITY_TEAR) then
-      local tear = entity
+    if (
+      entity.Type == EntityType.ENTITY_TEAR or
+      entity.Type == EntityType.ENTITY_LASER
+    ) then
+      local projectile = entity
 
       for _, entity in pairs(entities) do
-        if (is_a_chest(entity)) then
+        if (isChest(entity)) then
           local chest = entity:ToPickup()
 
-          if tear.Position:Distance(chest.Position) < 30 then
-            -- Kill the tear
-            Game():SpawnParticles(tear.Position, EffectVariant.TEAR_POOF_B, 1, 1, player.TearColor, 0)
-            tear:Remove()
+          if projectile.Type == EntityType.ENTITY_TEAR then
+            if projectile.Position:Distance(chest.Position) < 30 then
+              Game():SpawnParticles(projectile.Position, EffectVariant.TEAR_POOF_B, 1, 1, player.TearColor, 0)
+              projectile:Remove()
 
-            -- Open the chest
-            chest:TryOpenChest()
+              EC:explodeChest(chest)
 
-            -- Explode!
-            local bombflags = player:GetBombFlags()
-            Game():BombExplosionEffects(
-              chest.Position, 10, bombflags, player.TearColor,
-              chest, 1, false, false
-            )
-            chest:Remove()
+              -- For tears, we don't have any need to continue after this point
+              return
+            end
+          end
 
-            -- Scatter bomb synergy
-            if (bombflags &  TearFlags.TEAR_SCATTER_BOMB ~= 0) then
-              spawn_mini_chest(chest)
-              spawn_mini_chest(chest)
-              spawn_mini_chest(chest)
+          if projectile.Type == EntityType.ENTITY_LASER then
+            local playerPos = player.Position + Vector(0, -5)
+            local laser = projectile:ToLaser()
+
+            local vectorPlayerChest = chest.Position - playerPos
+            local vectorPlayerLaser = laser:GetEndPoint() - playerPos
+
+            local isPiercing =  laser.OneHit == false or player.TearFlags &  TearFlags.TEAR_PIERCING ~= 0
+
+            -- Work properly with piercing  and non-piercing lasers
+            local willIntercept
+            if laser.MaxDistance == 0 and isPiercing then
+              willIntercept = true
+            else
+              local distancePlayerLaser = laser.MaxDistance
+
+              if laser.MaxDistance == 0 then
+                local laserTarget = Game():GetRoom():GetLaserTarget(
+                  playerPos, -- + Vector(0, -10),
+                  vectorPlayerLaser
+                )
+                distancePlayerLaser = laserTarget:Distance(playerPos)
+              end
+
+              local distancePlayerChest = chest.Position:Distance(playerPos)
+
+              willIntercept = distancePlayerLaser >= distancePlayerChest
             end
 
-            return
+            if (
+              willIntercept and
+              isColinear(vectorPlayerChest, vectorPlayerLaser, 0.015)
+            ) then
+              EC:explodeChest(chest)
+            end
           end
         end
       end
@@ -89,4 +163,4 @@ function EC:explodeChests()
   end
 end
 
-EC:AddCallback(ModCallbacks.MC_POST_UPDATE, EC.explodeChests)
+EC:AddCallback(ModCallbacks.MC_POST_UPDATE, EC.postUpdate)
