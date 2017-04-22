@@ -2,7 +2,7 @@
   <Pool Name="shop">
     <Item
       Name="Parcel bomb"
-      Weight="100"
+      Weight="1"
       Decreaseby="1"
       Removeon="0.1"
     />

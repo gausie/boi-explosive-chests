@@ -1,16 +1,8 @@
 local EC = RegisterMod('Parcel bomb', 1)
 local PARCEL_BOMB = Isaac.GetItemIdByName('Parcel bomb')
 
-log_text = ''
-
-function log()
-  Isaac.RenderText(log_text, 40, 40, 0, 255, 0, 255)
-end
-
 function isColinear(Vector1, Vector2, angle)
   local dotProd = Vector1:Normalized():Dot(Vector2:Normalized())
-
-  log_text = dotProd
 
   return (
     dotProd <= 1 + angle and
@@ -93,8 +85,6 @@ end
 function EC:postUpdate()
   local player = Isaac.GetPlayer(0);
   local entities = Isaac.GetRoomEntities();
-
-  log()
 
   if (player:HasCollectible(PARCEL_BOMB) ~= true) then return end
 
