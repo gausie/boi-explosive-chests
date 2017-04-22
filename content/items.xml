@@ -1,0 +1,8 @@
+<items gfxroot="gfx/" version="1">
+  <passive
+    id="1"
+    name="Explosive Chests"
+    description="Chests are explosive"
+    gfx="collectibles_explodingchest.png"
+  />
+</items>

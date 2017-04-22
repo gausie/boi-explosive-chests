@@ -1,0 +1,10 @@
+<costumes anm2root="gfx/">
+  <!--
+  <costume
+    name="Explosive Chests"
+    anm2path="path to your custom animation in gfx.anm2"
+    priority="99"
+    type="passive"
+  />
+  -->
+</costumes>
